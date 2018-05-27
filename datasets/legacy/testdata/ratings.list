@@ -1,0 +1,178 @@
+CRC: 0x5643C843  File: ratings.list  Date: Fri Mar 17 00:00:00 2017
+
+From: vote@imdb.com (Movie Ratings Report)
+Subject: Movie Ratings Report
+
+For information on the list format, and on submitting your ratings,
+see the end of this posting.
+
+Details on obtaining this posting via FTP are also given below.
+
+Comments, suggestions etc. via e-mail to <help@imdb.com>
+
+TOP 250 MOVIES (25000+ VOTES)
+
+The formula used to calculate the top 250 movies is:
+
+  weighted rank = (v/(v+k))*X + (k/(v+k))*C
+
+  where:
+
+    X = average for the movie (mean)
+    v = number of votes for the movie
+    k = minimum votes required to be listed in the top 250 (currently 25000)
+    C = the mean vote across the whole report (currently 6.90)
+
+note: for this top 250, only votes from regular voters are considered.
+
+New  Distribution  Votes  Rank  Title
+      0000000125  1786238   9.2  The Shawshank Redemption (1994)
+      0000000125  1219308   9.2  The Godfather (1972)
+      0000000124  838449   9.0  The Godfather: Part II (1974)
+
+------------------------------------------------------------------------------
+
+REPORT FORMAT
+=============
+
+     In this list, movies have been rated on a scale of 1 to 10, 10 being
+good and 1 being bad.  For each movie, the total number of votes, the
+average rating, and the vote distribution are shown.  New movies are indicated
+by a "*" before their entry.
+
+     The vote distribution uses a single character to represent the percentage
+of votes for each ranking.  The following characters codes can appear:
+
+     "." no votes cast        "3" 30-39% of the votes  "7" 70-79% of the votes
+     "0"  1-9%  of the votes  "4" 40-49% of the votes  "8" 80-89% of the votes
+     "1" 10-19% of the votes  "5" 50-59% of the votes  "9" 90-99% of the votes
+     "2" 20-29% of the votes  "6" 60-69% of the votes  "*" 100%   of the votes
+
+
+HOW TO VOTE
+===========
+
+     To have your votes tallied in the list, send mail to
+vote@imdb.com.  In your mail, any line beginning with the word
+"vote" will be considered as a vote.  All other lines ARE IGNORED.  No human
+will see your mail.  Votes must be of the form
+
+        vote <rating> <title>
+
+where <rating> is an integer between 1 and 10, and <title> is everything on the
+line after the <rating>.  Case is not considered in movie titles.  Valid votes
+might be
+
+        vote 8 Annie Hall (1977)
+        vote 1 santa claus conquers the martians (1964)
+
+To make things easy, the reply-to field of this posting is set to the
+vote tabulator.  Simply hit "r" to send in your votes.
+
+The movie mail-server can now provide a number of ballots to help you get
+started in voting. For more details send an e-mail message with the subject:
+
+   HELP BALOT
+
+to <mail-server@imdb.com> (NOTE: this address is different from the vote
+tabulator address). There are currently three ballots available via the
+server: the currently weekly ballot as posted to rec.arts.movies.lists+surveys
+(use subject "BALOT WEEKLY"), one containing all the movies with 100+ votes
+(use subject "BALOT POPULAR"), and one based on the must-see movies list posted
+to the group earlier this year (use subject "BALOT MUST-SEE"). Finally note
+the commands all use the word BALOT rather than BALLOT owing to a limitation
+in the mail-server software.
+
+
+GENERAL INFORMATION
+===================
+
+This report is available via anonymous FTP from ftp.imdb.com and other sites
+as listed at http://www.imdb.com/interfaces
+
+For more information on the IMDb please see http://www.imdb.com/FAQ
+
+-----------------------------------------------------------------------------
+
+COPYING POLICY
+==============
+
+This file is copyright (c) 1993-2005 by The Internet Movie Database Ltd. All
+rights reserved.
+
+Disclaimer
+----------
+
+    This is a  database  of  movie  related  information  compiled  by
+    Internet  Movie  Database  Ltd (IMDb). While every effort has been
+    made to  ensure  the  accuracy  of  the  database  IMDb  gives  no
+    warranty  as  to  the accuracy of the information contained in the
+    database.  IMDb  reserves  the  right  to   withdraw   or   delete
+    information at any time.
+
+    This service is provided for the information of users only. It  is
+    not   provided  with  the  intention  that  users  rely  upon  the
+    information for any purposes. Accordingly,  IMDb  shall  under  no
+    circumstances  be liable for any loss or damage, including but not
+    limited to loss of profits, goodwill or indirect or  consequential
+    loss   arising   out   of  any  use  of  or  inaccuracies  in  the
+    information. All warranties express or  implied  are  excluded  to
+    the fullest extent permissible by law.
+
+    All information in this file  is  Copyright  2005  Internet  Movie
+    Database  Limited.  Reproduction,  distribution or transmission by
+    any means without the prior permission of IMDb is prohibited.  All
+    rights reserved.
+
+    For further information contact <licensing@imdb.com>
+
+         -------------------------------------------------------
+
+    All data and software released by Internet Movie Database  Ltd  is
+    freely  available  to  anyone  within certain limitations. You are
+    encouraged to quote subsets of the database  in  USENET  articles,
+    movie  related  FAQs,  magazine  articles etc. We do ask, however,
+    that you make reference to the source of the data  and  provide  a
+    pointer to the database for the benefit of the reader.
+
+    Permission is granted  by  the  copyright  holder  to  allow  free
+    distribution  of  this  file  and  any  other part of the Internet
+    Movie  Database  in  an  ELECTRONIC  FORM  ONLY,   providing   the
+    following conditions are met:
+
+         1. NO FEE OF ANY KIND, however indirect, will be  charged
+            for  its  distribution.  If  this file is being stored
+            for  later  distribution  to  anyone   that   can   be
+            construed   as   a   customer   of  yourself  or  your
+            organisation YOU MUST contact Internet Movie  Database
+            Ltd for permission.
+
+         2. Each  of  the  database  files  may   be   distributed
+            individually  but  only  in an unaltered form. All the
+            header and trailer information, including this  notice
+            and  the  details  on how to access the database, must
+            remain intact.
+
+         3. Specifically the files may NOT be  used  to  construct
+            any  kind  of  on-line database (except for individual
+            personal use). Clearance for  ALL  such  on-line  data
+            resources   must  be  requested  from  Internet  Movie
+            Database Ltd
+
+         4. In addition, copies of  the  Internet  Movie  Database
+            frequently  asked  questions  list and additions guide
+            must be made available in the same area / by the  same
+            method as the other database files.
+
+         5. CD-ROM  distribution  is  prohibited  without  written
+            permission from the Internet Movie Database Ltd
+
+    Distribution by e-mail, BBS and  Internet  systems  is  positively
+    encouraged within these limitations.
+
+    The files and software which make up the  movie  database  may  be
+    uploaded  to  commercial  BBS  systems  providing  that  the above
+    conditions are met and no *additional* fees are applied above  the
+    standard connect time or downloading charges.
+
+    For further information contact <licensing@imdb.com>      

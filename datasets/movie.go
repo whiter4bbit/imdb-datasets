@@ -1,14 +1,20 @@
 package datasets
 
-type MovieExtent interface {
-	MovieId() string
-}
+import "fmt"
 
 type Movie struct {
-	MovieId string
-	Title   string
-	Plot    string
-	Rating  float64
-	Year    int
-	Actors  []string
+	Id Hash
+	*MovieIdentity
+	*Attributes
+	Episodes []*Episode
+}
+
+func (m *Movie) ShortString() string {
+	return fmt.Sprintf("{Title: %q, Year: %d, Actors: %+v, Genres: %+v, Plot: %s}", m.Title, m.MovieIdentity.Year, m.Actors, m.Genres, m.Plot)
+}
+
+type Episode struct {
+	Id Hash
+	*EpisodeIdentity
+	*Attributes
 }

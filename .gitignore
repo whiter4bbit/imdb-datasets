@@ -1,0 +1,8 @@
+*~
+vendor
+imdb-datasets
+data/
+*.db
+*.fst
+*.log
+profile.out
