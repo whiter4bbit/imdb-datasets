@@ -35,8 +35,8 @@ func canNotParseLine(line string) error {
 	return fmt.Errorf("can not parse line %q", line)
 }
 
-func Export(imdbPath, dbPath, fstPath string) error {
-	writer, err := db.NewWriter(dbPath)
+func Export(imdbPath, dbPath, fstPath string, maxWritesPerTx int) error {
+	writer, err := db.NewWriter(dbPath, maxWritesPerTx)
 	if err != nil {
 		return err
 	}

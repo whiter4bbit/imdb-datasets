@@ -20,11 +20,13 @@ func exportMain(args []string) {
 
 	fstPath := flagSet.String("fst-path", "titles.fst", "fst output path")
 
+	maxWritesPerTx := flagSet.Int("max-writes-per-tx", 50000, "max writes per transaction")
+
 	imdbPath := flagSet.String("imdb-path", "ftp://ftp.fu-berlin.de/pub/misc/movies/database/frozendata", "imdb path")
 
 	flagSet.Parse(args)
 
-	if err := legacy.Export(*imdbPath, *dbPath, *fstPath); err != nil {
+	if err := legacy.Export(*imdbPath, *dbPath, *fstPath, *maxWritesPerTx); err != nil {
 		fmt.Printf("Can not export datasets: %v\n", err)
 		os.Exit(2)
 	}

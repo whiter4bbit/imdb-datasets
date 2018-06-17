@@ -86,8 +86,6 @@ func (w *MockWriter) WriteAttribute(hash datasets.Hash, attr datasets.Attribute)
 	return nil
 }
 
-const maxWritesPerTransaction = 100000
-
 var (
 	seqIdBucketKey       = []byte("seqId")
 	moviesBucketKey      = []byte("movies")
@@ -128,13 +126,14 @@ func (c *clock) reset() time.Duration {
 }
 
 type BoltdbWriter struct {
-	db      *bolt.DB
-	tx      *bolt.Tx
-	writes  int
-	buckets map[string]*bolt.Bucket
+	db             *bolt.DB
+	tx             *bolt.Tx
+	writes         int
+	maxWritesPerTx int
+	buckets        map[string]*bolt.Bucket
 }
 
-func NewWriter(dbPath string) (*BoltdbWriter, error) {
+func NewWriter(dbPath string, maxWritesPerTx int) (*BoltdbWriter, error) {
 	db, err := bolt.Open(dbPath, 0600, nil)
 	if err != nil {
 		return nil, err
@@ -143,12 +142,13 @@ func NewWriter(dbPath string) (*BoltdbWriter, error) {
 	db.NoGrowSync = true
 
 	return &BoltdbWriter{
-		db: db,
+		db:             db,
+		maxWritesPerTx: maxWritesPerTx,
 	}, nil
 }
 
 func (w *BoltdbWriter) ensureTxn() error {
-	if w.tx != nil && w.writes >= maxWritesPerTransaction {
+	if w.tx != nil && w.writes >= w.maxWritesPerTx {
 		if err := w.tx.Commit(); err != nil {
 			return err
 		}
