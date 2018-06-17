@@ -126,11 +126,14 @@ func (c *clock) reset() time.Duration {
 }
 
 type BoltdbWriter struct {
-	db             *bolt.DB
-	tx             *bolt.Tx
-	writes         int
-	maxWritesPerTx int
-	buckets        map[string]*bolt.Bucket
+	db                *bolt.DB
+	tx                *bolt.Tx
+	writes            int
+	maxWritesPerTx    int
+	seqIdBucket       *bolt.Bucket
+	moviesBucket      *bolt.Bucket
+	attrsBucket       *bolt.Bucket
+	searchIndexBucket *bolt.Bucket
 }
 
 func NewWriter(dbPath string, maxWritesPerTx int) (*BoltdbWriter, error) {
@@ -140,6 +143,15 @@ func NewWriter(dbPath string, maxWritesPerTx int) (*BoltdbWriter, error) {
 	}
 	db.NoSync = true
 	db.NoGrowSync = true
+
+	for _, bucketKey := range [][]byte{seqIdBucketKey, moviesBucketKey, attrsBucketKey, searchIndexBucketKey} {
+		if err := db.Update(func(tx *bolt.Tx) error {
+			_, err := tx.CreateBucketIfNotExists(bucketKey)
+			return err
+		}); err != nil {
+			return nil, err
+		}
+	}
 
 	return &BoltdbWriter{
 		db:             db,
@@ -162,40 +174,23 @@ func (w *BoltdbWriter) ensureTxn() error {
 		}
 		w.writes = 0
 		w.tx = tx
-		w.buckets = make(map[string]*bolt.Bucket)
+
+		w.seqIdBucket = w.tx.Bucket(seqIdBucketKey)
+		w.moviesBucket = w.tx.Bucket(moviesBucketKey)
+		w.attrsBucket = w.tx.Bucket(attrsBucketKey)
+		w.searchIndexBucket = w.tx.Bucket(searchIndexBucketKey)
 	}
 
 	return nil
 }
 
-func (w *BoltdbWriter) bucket(name []byte) (*bolt.Bucket, error) {
-	bucket := w.buckets[string(name)]
-	if bucket == nil {
-		b, err := w.tx.CreateBucketIfNotExists(name)
-		if err != nil {
-			return nil, err
-		}
-
-		w.buckets[string(name)] = b
-
-		bucket = b
-	}
-
-	return bucket, nil
-}
-
 func (w *BoltdbWriter) writeSeqId(hash datasets.Hash) (uint64, error) {
-	b, err := w.bucket(seqIdBucketKey)
+	next, err := w.seqIdBucket.NextSequence()
 	if err != nil {
 		return 0, err
 	}
 
-	next, err := b.NextSequence()
-	if err != nil {
-		return 0, err
-	}
-
-	if err := b.Put(itob32(uint32(next)), hash[:]); err != nil {
+	if err := w.seqIdBucket.Put(itob32(uint32(next)), hash[:]); err != nil {
 		return 0, err
 	}
 
@@ -205,12 +200,12 @@ func (w *BoltdbWriter) writeSeqId(hash datasets.Hash) (uint64, error) {
 }
 
 func (w *BoltdbWriter) writeSearchIndexEntry(movie *datasets.MovieIdentity, seqId uint64) error {
-	b, err := w.bucket(searchIndexBucketKey)
-	if err != nil {
-		return err
-	}
 
-	if err := b.Put(movie.SearchIndexValue(), itob32(uint32(seqId))); err != nil {
+	indexValue := movie.SearchIndexValue()
+
+	value := append(w.searchIndexBucket.Get(indexValue), itob32(uint32(seqId))...)
+
+	if err := w.searchIndexBucket.Put(indexValue, value); err != nil {
 		return err
 	}
 
@@ -220,17 +215,12 @@ func (w *BoltdbWriter) writeSearchIndexEntry(movie *datasets.MovieIdentity, seqI
 }
 
 func (w *BoltdbWriter) writeNewEntry(hash datasets.Hash, entry *DBEntry) error {
-	b, err := w.bucket(moviesBucketKey)
-	if err != nil {
-		return err
-	}
-
 	value, err := entry.MarshalMsg([]byte{})
 	if err != nil {
 		return err
 	}
 
-	if err := b.Put(hash[:], value); err != nil {
+	if err := w.moviesBucket.Put(hash[:], value); err != nil {
 		return err
 	}
 
@@ -261,42 +251,6 @@ func (w *BoltdbWriter) WriteMovie(movie *datasets.MovieIdentity) error {
 	return w.writeSearchIndexEntry(movie, seqId)
 }
 
-func (w *BoltdbWriter) updateEntry(hash []byte, f func(*DBEntry)) error {
-	if err := w.ensureTxn(); err != nil {
-		return err
-	}
-
-	b, err := w.bucket(moviesBucketKey)
-	if err != nil {
-		return err
-	}
-
-	value := b.Get(hash)
-	if value == nil {
-		return NotFoundErr
-	}
-
-	entry := &DBEntry{}
-
-	if _, err := entry.UnmarshalMsg(value); err != nil {
-		return err
-	}
-
-	f(entry)
-
-	if value, err = entry.MarshalMsg([]byte{}); err != nil {
-		return err
-	}
-
-	if err := b.Put(hash, value); err != nil {
-		return err
-	}
-
-	w.writes += 1
-
-	return nil
-}
-
 func (w *BoltdbWriter) WriteEpisode(episode *datasets.EpisodeIdentity) error {
 	if err := w.ensureTxn(); err != nil {
 		return err
@@ -321,12 +275,7 @@ func (w *BoltdbWriter) WriteEpisode(episode *datasets.EpisodeIdentity) error {
 }
 
 func (w *BoltdbWriter) getSeqId(hash datasets.Hash) (uint32, error) {
-	movies, err := w.bucket(moviesBucketKey)
-	if err != nil {
-		return 0, err
-	}
-
-	value := movies.Get(hash[:])
+	value := w.moviesBucket.Get(hash[:])
 	if value == nil {
 		return 0, NotFoundErr
 	}
@@ -349,12 +298,7 @@ func (w *BoltdbWriter) WriteAttribute(hash datasets.Hash, attr datasets.Attribut
 		return err
 	}
 
-	attributes, err := w.bucket(attrsBucketKey)
-	if err != nil {
-		return err
-	}
-
-	attrSeqId, err := attributes.NextSequence()
+	attrSeqId, err := w.attrsBucket.NextSequence()
 	if err != nil {
 		return err
 	}
@@ -365,7 +309,7 @@ func (w *BoltdbWriter) WriteAttribute(hash datasets.Hash, attr datasets.Attribut
 		return err
 	}
 
-	err = attributes.Put(makeAttrKey(movieSeqId, uint32(attrSeqId), attr.GetType()), attrValue)
+	err = w.attrsBucket.Put(makeAttrKey(movieSeqId, uint32(attrSeqId), attr.GetType()), attrValue)
 
 	w.writes += 1
 

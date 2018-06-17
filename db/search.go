@@ -4,6 +4,7 @@ import (
 	"github.com/couchbase/vellum"
 	"github.com/couchbase/vellum/levenshtein"
 	"github.com/whiter4bbit/imdb-datasets/datasets"
+	"strings"
 )
 
 type Search struct {
@@ -26,21 +27,21 @@ func NewSearch(fstPath string, reader *Reader, dist int) (*Search, error) {
 }
 
 func (s *Search) Search(query string) ([]*datasets.Movie, error) {
-	lst, err := levenshtein.New(query, s.dist)
+	lst, err := levenshtein.New(strings.ToLower(query), s.dist)
 	if err != nil {
 		return nil, err
 	}
 
-	var seqIds []uint32
+	var titles [][]byte
 
 	iter, err := s.fst.Search(lst, nil, nil)
 	for err == nil {
-		_, id := iter.Current()
+		title, _ := iter.Current()
 
-		seqIds = append(seqIds, uint32(id))
+		titles = append(titles, title)
 
 		err = iter.Next()
 	}
 
-	return s.reader.GetByIds(seqIds)
+	return s.reader.GetByTitleIndex(titles)
 }

@@ -474,9 +474,9 @@ func readHash(expr string) (datasets.Hash, error) {
 		return empty, err
 	}
 
-	if id.movie != nil {
-		return id.movie.MakeHash(), nil
+	if id.episode != nil {
+		return id.episode.MakeHash(), nil
 	}
 
-	return id.episode.MakeHash(), nil
+	return id.movie.MakeHash(), nil
 }

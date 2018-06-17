@@ -103,13 +103,7 @@ func (r *Reader) ForEachTitleIndex(f func(title []byte, seqId uint32) error) err
 	})
 }
 
-func (r *Reader) GetByIds(ids []uint32) ([]*datasets.Movie, error) {
-	tx, err := r.db.Begin(false)
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback()
-
+func (r *Reader) getByIds(tx *bolt.Tx, ids []uint32) ([]*datasets.Movie, error) {
 	var keys [][]byte
 	for _, id := range ids {
 		keys = append(keys, itob32(id))
@@ -124,6 +118,24 @@ func (r *Reader) GetByIds(ids []uint32) ([]*datasets.Movie, error) {
 	}
 
 	return r.GetByHash(hashes)
+}
+
+func (r *Reader) GetByTitleIndex(titles [][]byte) ([]*datasets.Movie, error) {
+	tx, err := r.db.Begin(false)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	var ids []uint32
+	for _, value := range r.bulkGet(tx, searchIndexBucketKey, titles) {
+		for len(value) > 0 {
+			ids = append(ids, btoi32(value))
+			value = value[4:]
+		}
+	}
+
+	return r.getByIds(tx, ids)
 }
 
 func (r *Reader) GetByHash(hashes []datasets.Hash) ([]*datasets.Movie, error) {

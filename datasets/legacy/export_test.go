@@ -21,6 +21,7 @@ func TestExportActors(t *testing.T) {
         {(&datasets.MovieIdentity{Title: "Fatherhood 101", Year: 2013}).MakeHash(), &datasets.Actors{Actor: "$lim, Bee Moe"}},
         {(&datasets.MovieIdentity{Title: "For Thy Love 2", Year: 2009}).MakeHash(), &datasets.Actors{Actor: "$lim, Bee Moe"}},
         {(&datasets.MovieIdentity{Title: "Tria33", Year: 2015}).MakeHash(), &datasets.Actors{Actor: "'77"}},
+        {(&datasets.EpisodeIdentity{Title: "Simpsons", Year: 1999, SeassonNumber: 1, EpisodeNumber: 2}).MakeHash(), &datasets.Actors{Actor: "'77"}},
     }, writer.Attrs)
 }
 
@@ -183,6 +184,21 @@ func TestMovieIdParse(t *testing.T) {
                 movie: &datasets.MovieIdentity{
                     Title: "#Cocinando",
                     Year:  2015,
+                },
+            },
+        },
+        {
+            expr: `"Jura" (2006) {(#1.30)}  [Francisco]  <14>`,
+            expected: &parsedIdentity{
+                movie: &datasets.MovieIdentity{
+                    Title: "Jura",
+                    Year:  2006,
+                },
+                episode: &datasets.EpisodeIdentity{
+                    Title:         "Jura",
+                    Year:          2006,
+                    SeassonNumber: 1,
+                    EpisodeNumber: 30,
                 },
             },
         },
