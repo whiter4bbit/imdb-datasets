@@ -14,7 +14,7 @@ func TestWriter(t *testing.T) {
 
 	defer os.RemoveAll(path.Name())
 
-	writer, err := NewWriter(path.Name())
+	writer, err := NewWriter(path.Name(), 10000)
 	require.Nil(t, err)
 
 	data := []struct {
