@@ -38,7 +38,7 @@ func (s *Search) Search(query string) ([]*datasets.Movie, error) {
 	for err == nil {
 		title, _ := iter.Current()
 
-		titles = append(titles, title)
+		titles = append(titles, append([]byte{}, title...))
 
 		err = iter.Next()
 	}
