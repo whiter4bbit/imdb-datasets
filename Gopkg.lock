@@ -8,26 +8,10 @@
   version = "v1.3.0"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/couchbase/vellum"
-  packages = [
-    ".",
-    "levenshtein",
-    "utf8"
-  ]
-  revision = "eb6ae3743b3f300f2136f83ca78c08cc071edbd4"
-
-[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
   version = "v1.1.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/edsrzf/mmap-go"
-  packages = ["."]
-  revision = "0bce6a6887123b67a60366d2c9fe2dfb74289d2e"
 
 [[projects]]
   branch = "master"
@@ -63,12 +47,6 @@
   version = "1.0.2"
 
 [[projects]]
-  name = "github.com/willf/bitset"
-  packages = ["."]
-  revision = "d860f346b89450988a379d7d705e83c58d1ea227"
-  version = "v1.1.3"
-
-[[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
@@ -77,6 +55,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "68c6a6284bde3162bd9824c73f5067fe287be2af820c3607cb8609eea1751e71"
+  inputs-digest = "3d80a8685967de94d29bc28c5a740071b8a3287b28b35d3ec58e13bb494bd310"
   solver-name = "gps-cdcl"
   solver-version = 1

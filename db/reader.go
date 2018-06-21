@@ -7,8 +7,14 @@ import (
 	"sort"
 )
 
+const maxMoviesToReturn = 100
+
 type Reader struct {
 	db *bolt.DB
+}
+
+type Filter struct {
+	Hashes []datasets.Hash
 }
 
 func NewReader(dbPath string) (*Reader, error) {
@@ -103,14 +109,27 @@ func (r *Reader) ForEachTitleIndex(f func(title []byte, seqId uint32) error) err
 	})
 }
 
-func (r *Reader) getByIds(tx *bolt.Tx, ids []uint32) ([]*datasets.Movie, error) {
+func (r *Reader) getByIds(tx *bolt.Tx, ids []uint32, filter *Filter) ([]*datasets.Movie, error) {
 	var keys [][]byte
 	for _, id := range ids {
 		keys = append(keys, itob32(id))
 	}
 
+	var hashesToSearch map[string]bool
+	if filter != nil {
+		hashesToSearch = make(map[string]bool)
+
+		for _, hash := range filter.Hashes {
+			hashesToSearch[hash.ToMapKey()] = true
+		}
+	}
+
 	var hashes []datasets.Hash
 	for _, value := range r.bulkGet(tx, seqIdBucketKey, keys) {
+		if filter != nil && !hashesToSearch[string(value)] {
+			continue
+		}
+
 		var hash datasets.Hash
 		copy(hash[:], value)
 
@@ -135,7 +154,35 @@ func (r *Reader) GetByTitleIndex(titles [][]byte) ([]*datasets.Movie, error) {
 		}
 	}
 
-	return r.getByIds(tx, ids)
+	return r.getByIds(tx, ids, nil)
+}
+
+func (r *Reader) GetByTitlePrefix(prefix []byte, filter *Filter) ([]*datasets.Movie, error) {
+	tx, err := r.db.Begin(false)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	startKey := bytes.ToLower(prefix)
+
+	endKey := append(startKey, 0xFF)
+
+	cursor := tx.Bucket(searchIndexBucketKey).Cursor()
+
+	var ids []uint32
+	for key, value := cursor.Seek(startKey); key != nil && bytes.Compare(key, endKey) < 0; key, value = cursor.Next() {
+		for len(value) > 0 {
+			ids = append(ids, btoi32(value))
+			value = value[4:]
+		}
+	}
+
+	if filter == nil && len(ids) > maxMoviesToReturn {
+		ids = ids[:maxMoviesToReturn]
+	}
+
+	return r.getByIds(tx, ids, filter)
 }
 
 func (r *Reader) GetByHash(hashes []datasets.Hash) ([]*datasets.Movie, error) {

@@ -18,15 +18,13 @@ func exportMain(args []string) {
 
 	dbPath := flagSet.String("db-path", "imdb.db", "output path")
 
-	fstPath := flagSet.String("fst-path", "titles.fst", "fst output path")
-
 	maxWritesPerTx := flagSet.Int("max-writes-per-tx", 50000, "max writes per transaction")
 
 	imdbPath := flagSet.String("imdb-path", "ftp://ftp.fu-berlin.de/pub/misc/movies/database/frozendata", "imdb path")
 
 	flagSet.Parse(args)
 
-	if err := legacy.Export(*imdbPath, *dbPath, *fstPath, *maxWritesPerTx); err != nil {
+	if err := legacy.Export(*imdbPath, *dbPath, *maxWritesPerTx); err != nil {
 		fmt.Printf("Can not export datasets: %v\n", err)
 		os.Exit(2)
 	}
@@ -42,10 +40,6 @@ func searchMain(args []string) {
 
 	dbPath := flagSet.String("db-path", "imdb.db", "path to movie database")
 
-	fstPath := flagSet.String("fst-path", "titles.fst", "path to fst")
-
-	dist := flagSet.Int("dist", 2, "levenshtein distance")
-
 	query := flagSet.String("query", "rain man", "query")
 
 	flagSet.Parse(args)
@@ -57,13 +51,7 @@ func searchMain(args []string) {
 	}
 	defer reader.Close()
 
-	search, err := db.NewSearch(*fstPath, reader, *dist)
-	if err != nil {
-		fmt.Printf("Can not create search: %v\n", err)
-		os.Exit(2)
-	}
-
-	results, err := search.Search(*query)
+	results, err := reader.GetByTitlePrefix([]byte(*query), nil)
 	if err != nil {
 		fmt.Printf("Can search: %v\n", err)
 		os.Exit(2)

@@ -35,7 +35,7 @@ func canNotParseLine(line string) error {
 	return fmt.Errorf("can not parse line %q", line)
 }
 
-func Export(imdbPath, dbPath, fstPath string, maxWritesPerTx int) error {
+func Export(imdbPath, dbPath string, maxWritesPerTx int) error {
 	writer, err := db.NewWriter(dbPath, maxWritesPerTx)
 	if err != nil {
 		return err
@@ -103,29 +103,7 @@ func Export(imdbPath, dbPath, fstPath string, maxWritesPerTx int) error {
 		conn.Quit()
 	}
 
-	if err := writer.Close(); err != nil {
-		return err
-	}
-
-	reader, err := db.NewReader(dbPath)
-	if err != nil {
-		return err
-	}
-
-	fst, err := db.NewFSTWriter(fstPath)
-	if err != nil {
-		return err
-	}
-
-	if err := reader.ForEachTitleIndex(fst.Write); err != nil {
-		return err
-	}
-
-	if err := reader.Close(); err != nil {
-		return err
-	}
-
-	return fst.Close()
+	return writer.Close()
 }
 
 func exportLines(r io.ReadCloser, f func(line string) error) error {
