@@ -2,12 +2,17 @@ package db
 
 import (
 	"bytes"
+	"errors"
 	bolt "github.com/coreos/bbolt"
 	"github.com/whiter4bbit/imdb-datasets/datasets"
 	"sort"
 )
 
 const maxMoviesToReturn = 100
+
+var (
+	notAMovieErr = errors.New("not a movie")
+)
 
 type Reader struct {
 	db *bolt.DB
@@ -95,20 +100,6 @@ func (r *Reader) getAttrs(tx *bolt.Tx, seqId uint32) (*datasets.Attributes, erro
 	return attrs, nil
 }
 
-func (r *Reader) ForEachTitleIndex(f func(title []byte, seqId uint32) error) error {
-	tx, err := r.db.Begin(false)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	b := tx.Bucket(searchIndexBucketKey)
-
-	return b.ForEach(func(key, value []byte) error {
-		return f(key, btoi32(value))
-	})
-}
-
 func (r *Reader) getByIds(tx *bolt.Tx, ids []uint32, filter *Filter) ([]*datasets.Movie, error) {
 	var keys [][]byte
 	for _, id := range ids {
@@ -139,24 +130,6 @@ func (r *Reader) getByIds(tx *bolt.Tx, ids []uint32, filter *Filter) ([]*dataset
 	return r.GetByHash(hashes)
 }
 
-func (r *Reader) GetByTitleIndex(titles [][]byte) ([]*datasets.Movie, error) {
-	tx, err := r.db.Begin(false)
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback()
-
-	var ids []uint32
-	for _, value := range r.bulkGet(tx, searchIndexBucketKey, titles) {
-		for len(value) > 0 {
-			ids = append(ids, btoi32(value))
-			value = value[4:]
-		}
-	}
-
-	return r.getByIds(tx, ids, nil)
-}
-
 func (r *Reader) GetByTitlePrefix(prefix []byte, filter *Filter) ([]*datasets.Movie, error) {
 	tx, err := r.db.Begin(false)
 	if err != nil {
@@ -185,41 +158,55 @@ func (r *Reader) GetByTitlePrefix(prefix []byte, filter *Filter) ([]*datasets.Mo
 	return r.getByIds(tx, ids, filter)
 }
 
-func (r *Reader) GetByHash(hashes []datasets.Hash) ([]*datasets.Movie, error) {
+func (r *Reader) ForEachMovie(f func(*datasets.Movie) error) error {
 	tx, err := r.db.Begin(false)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer tx.Rollback()
 
+	zeroPad := make([]byte, datasets.HashSize/2)
+
+	return tx.Bucket(moviesBucketKey).ForEach(func(key []byte, value []byte) error {
+		if !bytes.Equal(key[datasets.HashSize/2:], zeroPad) {
+			return nil
+		}
+
+		movie, err := r.getMovie(tx, value, false)
+		if err == notAMovieErr {
+			return nil
+		} else if err != nil {
+			return err
+		}
+
+		return f(movie)
+	})
+}
+
+func (r *Reader) getMovie(tx *bolt.Tx, movieValue []byte, loadEpisodes bool) (*datasets.Movie, error) {
 	var (
-		movies []*datasets.Movie
-		keys   [][]byte
+		movieEntry DBEntry
+		movie      datasets.Movie
 	)
 
-	for i, _ := range hashes {
-		keys = append(keys, hashes[i][:])
+	if _, err := movieEntry.UnmarshalMsg(movieValue); err != nil {
+		return nil, err
 	}
 
-	for _, movieValue := range r.bulkGet(tx, moviesBucketKey, keys) {
-		var (
-			movieEntry DBEntry
-			movie      datasets.Movie
-		)
+	attrs, err := r.getAttrs(tx, movieEntry.SeqId)
+	if err != nil {
+		return nil, err
+	}
 
-		if _, err := movieEntry.UnmarshalMsg(movieValue); err != nil {
-			return nil, err
-		}
+	if movieEntry.Movie == nil {
+		return nil, notAMovieErr
+	}
 
-		attrs, err := r.getAttrs(tx, movieEntry.SeqId)
-		if err != nil {
-			return nil, err
-		}
+	movie.Attributes = attrs
+	movie.MovieIdentity = movieEntry.Movie
+	movie.Id = movie.MovieIdentity.MakeHash()
 
-		movie.Attributes = attrs
-		movie.MovieIdentity = movieEntry.Movie
-		movie.Id = movie.MovieIdentity.MakeHash()
-
+	if loadEpisodes {
 		for _, episodeEntry := range r.bulkGetByPrefix(tx, moviesBucketKey, movie.Id.Lo(), datasets.HashSize, true) {
 			var (
 				episodeDBEntry DBEntry
@@ -242,8 +229,34 @@ func (r *Reader) GetByHash(hashes []datasets.Hash) ([]*datasets.Movie, error) {
 
 			movie.Episodes = append(movie.Episodes, &episode)
 		}
+	}
 
-		movies = append(movies, &movie)
+	return &movie, nil
+}
+
+func (r *Reader) GetByHash(hashes []datasets.Hash) ([]*datasets.Movie, error) {
+	tx, err := r.db.Begin(false)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	var (
+		movies []*datasets.Movie
+		keys   [][]byte
+	)
+
+	for i, _ := range hashes {
+		keys = append(keys, hashes[i][:])
+	}
+
+	for _, movieValue := range r.bulkGet(tx, moviesBucketKey, keys) {
+		movie, err := r.getMovie(tx, movieValue, true)
+		if err != nil {
+			return nil, err
+		}
+
+		movies = append(movies, movie)
 	}
 
 	return movies, nil

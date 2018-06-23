@@ -1,10 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/whiter4bbit/imdb-datasets/datasets"
 	"github.com/whiter4bbit/imdb-datasets/datasets/legacy"
 	"github.com/whiter4bbit/imdb-datasets/db"
+	"math/rand"
 	"os"
 )
 
@@ -62,11 +65,64 @@ func searchMain(args []string) {
 	}
 }
 
+func dumpMain(args []string) {
+	flagSet := flag.NewFlagSet("dump", flag.ExitOnError)
+
+	flagSet.Usage = func() {
+		fmt.Printf("Usage of %s\n", os.Args[0])
+		flagSet.PrintDefaults()
+	}
+
+	dbPath := flagSet.String("db-path", "imdb.db", "path to movie database")
+
+	sample := flagSet.Float64("sample-rate", 1.0, "same rate")
+
+	rating := flagSet.Float64("rating", 8.0, "rating lower bound")
+
+	flagSet.Parse(args)
+
+	reader, err := db.NewReader(*dbPath)
+	if err != nil {
+		fmt.Printf("Can not create reader: %v\n", err)
+		os.Exit(2)
+	}
+	defer reader.Close()
+
+	if err := reader.ForEachMovie(func(movie *datasets.Movie) error {
+		if len(movie.Plot) == 0 {
+			return nil
+		}
+
+		if movie.Rating < *rating {
+			return nil
+		}
+
+		if rand.Float64() > *sample {
+			return nil
+		}
+
+		movie.Episodes = nil
+
+		b, err := json.Marshal(movie)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf(string(b) + "\n")
+
+		return nil
+	}); err != nil {
+		fmt.Printf("Can not dump as json: %v\n", err)
+		os.Exit(2)
+	}
+}
+
 func printUsageAndExit() {
 	fmt.Printf(`Usage: %s [command]
 Command:
   - export
   - search
+  - dump
 `, os.Args[0])
 	os.Exit(2)
 }
@@ -81,6 +137,8 @@ func main() {
 		exportMain(os.Args[2:])
 	case "search":
 		searchMain(os.Args[2:])
+	case "dump":
+		dumpMain(os.Args[2:])
 	default:
 		printUsageAndExit()
 	}

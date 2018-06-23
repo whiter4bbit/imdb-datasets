@@ -18,8 +18,8 @@ func TestExportActors(t *testing.T) {
     require.Nil(t, exportActors(reader, writer))
 
     require.Equal(t, []*db.HashAndAttribute{
-        {(&datasets.MovieIdentity{Title: "Fatherhood 101", Year: 2013}).MakeHash(), &datasets.Actors{Actor: "$lim, Bee Moe"}},
-        {(&datasets.MovieIdentity{Title: "For Thy Love 2", Year: 2009}).MakeHash(), &datasets.Actors{Actor: "$lim, Bee Moe"}},
+        {(&datasets.MovieIdentity{Title: "Fatherhood 101", Year: 2013}).MakeHash(), &datasets.Actors{Actor: "äctor, Bee Moe"}},
+        {(&datasets.MovieIdentity{Title: "For Thy Love 2", Year: 2009}).MakeHash(), &datasets.Actors{Actor: "äctor, Bee Moe"}},
         {(&datasets.MovieIdentity{Title: "Tria33", Year: 2015}).MakeHash(), &datasets.Actors{Actor: "'77"}},
         {(&datasets.EpisodeIdentity{Title: "Simpsons", Year: 1999, SeassonNumber: 1, EpisodeNumber: 2}).MakeHash(), &datasets.Actors{Actor: "'77"}},
     }, writer.Attrs)

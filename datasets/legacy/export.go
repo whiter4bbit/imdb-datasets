@@ -7,6 +7,7 @@ import (
 	"github.com/jlaffaye/ftp"
 	"github.com/whiter4bbit/imdb-datasets/datasets"
 	"github.com/whiter4bbit/imdb-datasets/db"
+	"golang.org/x/text/encoding/charmap"
 	"io"
 	"log"
 	"os"
@@ -112,7 +113,9 @@ func exportLines(r io.ReadCloser, f func(line string) error) error {
 		headerSeen     bool
 	)
 
-	scanner := bufio.NewScanner(r)
+	decoder := charmap.ISO8859_1.NewDecoder().Reader(r)
+
+	scanner := bufio.NewScanner(decoder)
 
 	for scanner.Scan() {
 		if strings.HasPrefix(scanner.Text(), "TOP 250 MOVIES (25000+ VOTES)") {
